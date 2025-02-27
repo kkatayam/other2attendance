@@ -3,7 +3,7 @@ import pandas as pd
 import io
 
 # タイトル
-st.title("📂 出席ファイル作成ツール（Web版）")
+st.title("📂 出席データ変換ツール（Web版）")
 
 # ファイルアップロード
 uploaded_file = st.file_uploader("CSVファイルをアップロード", type="csv")
@@ -19,29 +19,26 @@ if uploaded_file is not None:
     # 2行目をヘッダーとして読み込む
     df = pd.read_csv(data_io, encoding="cp932")
 
-    # **カラム名を表示**
-    st.write("📌 読み込んだCSVのカラム")
-    st.write(list(df.columns))
+    # **折りたたみ式のデバッグ情報**
+    with st.expander("📌 読み込んだCSVのカラム", expanded=False):  # ❌ デフォルトで閉じる
+        st.write(list(df.columns))
 
-    # **変換前データを表示**
-    st.subheader("📋 変換前のデータ")
-    st.dataframe(df)
+    with st.expander("📋 変換前のデータ", expanded=False):  # ✅ デフォルトで閉じる
+        st.dataframe(df)
 
     # **ファイル名から処理を分岐**
-    file_name = uploaded_file.name.lower()
-    
-    if file_name.startswith("tststatus_"):  # `tststatus_` で始まる場合
-        st.write("🔍 [tststatus] の処理を適用します")
+    if "tststatus" in uploaded_file.name:
         df_attendcourse = df[["#ユーザーID", "状況", "学籍番号/教職員番号", "氏名"]].copy()
         df_attendcourse.columns = ["ユーザーID", "出席状態種別", "(学籍番号/教職員番号)", "(氏名)"]
-        df_attendcourse["出席状態種別"] = df_attendcourse["出席状態種別"].astype(str).str.strip().apply(lambda x: 1 if x == "実施済" else 0)
-
-    elif file_name.startswith("eqtstatus_"):  # `eqtstatus_` で始まる場合
-        st.write("🔍 [eqtstatus] の処理を適用します")
+        df_attendcourse["出席状態種別"] = df_attendcourse["出席状態種別"].astype(str).str.strip().apply(
+            lambda x: 1 if x == "実施済" else 0
+        )
+    elif "eqtstatus" in uploaded_file.name:
         df_attendcourse = df[["#ユーザーID", "状況", "学籍番号/教職員番号", "氏名"]].copy()
         df_attendcourse.columns = ["ユーザーID", "出席状態種別", "(学籍番号/教職員番号)", "(氏名)"]
-        df_attendcourse["出席状態種別"] = df_attendcourse["出席状態種別"].astype(str).str.strip().apply(lambda x: 1 if x == "回答済" else 0)
-
+        df_attendcourse["出席状態種別"] = df_attendcourse["出席状態種別"].astype(str).str.strip().apply(
+            lambda x: 1 if x == "回答済" else 0
+        )
     else:
         st.error("❌ 対応していないファイルです。")
         st.stop()
@@ -53,9 +50,9 @@ if uploaded_file is not None:
     for col in df_attendcourse.select_dtypes(include=["int", "float"]).columns:
         df_attendcourse[col] = df_attendcourse[col].apply(lambda x: int(x) if pd.notnull(x) else "")
 
-    # **変換後のデータを表示**
-    st.subheader("✅ 変換後のデータ")
-    st.dataframe(df_attendcourse)
+    # **折りたたみ式の変換後データ**
+    with st.expander("✅ 変換後のデータ", expanded=False):  # ✅ デフォルトで閉じる
+        st.dataframe(df_attendcourse)
 
     # **CSVファイルとしてダウンロード**
     output = io.BytesIO()
